@@ -22,15 +22,23 @@ export const metadata: Metadata = {
     title: "StudyQuest - Exam Preparation",
     description: "A modern platform to organize and study your exam questions",
     url: "https://study-quest-woad.vercel.app/",
+    siteName: "StudyQuest",
+    locale: "en_US",
     images: [
       {
         url: "https://study-quest-woad.vercel.app/herophoto.png",
         width: 1200,
         height: 630,
         alt: "StudyQuest - Exam Preparation",
+        type: "image/png",
       },
     ],
     type: "website",
+  },
+  // Add Facebook-specific tags
+  other: {
+    "fb:app_id": "", // Add your Facebook App ID if you have one
+    "og:image:secure_url": "https://study-quest-woad.vercel.app/herophoto.png",
   },
 };
 
