@@ -48,7 +48,7 @@ export function ActiveFiltersSection({
         <FilterBadge
           label="Status"
           value={filters.studyStatus === "studied" ? "Studied" : "Not Studied"}
-          onRemove={() => onClearStudyStatus}
+          onRemove={onClearStudyStatus}
         />
       )}
 

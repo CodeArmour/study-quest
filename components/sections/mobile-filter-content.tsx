@@ -175,8 +175,8 @@ export function MobileFilterContent({
             <SelectValue placeholder="Select sort order" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="custom">Custom Order</SelectItem>
             <SelectItem value="default">Default Order</SelectItem>
+            <SelectItem value="custom">Custom Order</SelectItem>
             <SelectItem value="newest">Newest First</SelectItem>
             <SelectItem value="oldest">Oldest First</SelectItem>
             <SelectItem value="a-z">A to Z</SelectItem>

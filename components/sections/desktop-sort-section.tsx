@@ -46,6 +46,13 @@ export function DesktopSortSection({ sortBy, onSortChange, onSaveCurrentOrder }:
           <DropdownMenuLabel>Sort Questions</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            onClick={() => onSortChange("default")}
+            className={sortBy === "default" ? "bg-purple-50 dark:bg-purple-900/20" : ""}
+          >
+            Default Order
+            {sortBy === "default" && <CheckCircle className="h-4 w-4 ml-auto" />}
+          </DropdownMenuItem>
+          <DropdownMenuItem
             onClick={() => onSortChange("custom")}
             className={sortBy === "custom" ? "bg-purple-50 dark:bg-purple-900/20" : ""}
           >

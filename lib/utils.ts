@@ -97,7 +97,7 @@ export const getActiveFiltersCount = (filters, selectedTags) => {
   if (selectedTags.length > 0) count++
   if (filters.difficulty.length > 0) count++
   if (filters.studyStatus !== "all") count++
-  if (filters.sortBy !== "newest") count++
+  if (filters.sortBy !== "default") count++
   if (filters.questionType !== "all") count++
   return count
 }
