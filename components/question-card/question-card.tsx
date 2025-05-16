@@ -1,7 +1,7 @@
 "use client"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, Edit, GripVertical } from "lucide-react"
+import { CheckCircle, Edit, GripVertical, BookOpen } from "lucide-react"
 import { TypeBadge } from "@/components/ui/type-badge"
 import { DifficultyBadge } from "@/components/ui/difficulty-badge"
 import { StudiedBadge } from "@/components/ui/studied-badge"
@@ -17,9 +17,9 @@ interface QuestionCardProps {
   notes: any[]
   currentNote: string
   onCurrentNoteChange: (value: string) => void
-  onSaveNote: () => void
-  onUpdateNote: (noteId: string, content: string) => void
-  onDeleteNote: (noteId: string) => void
+  onSaveNote: (questionId: number) => void
+  onUpdateNote: (questionId: number, noteId: string, content: string) => void
+  onDeleteNote: (questionId: number, noteId: string) => void
   onReorderNotes: (questionId: number, reorderedNotes: any[]) => void
   showNotes: boolean
   toggleNotes: () => void
@@ -35,7 +35,7 @@ export function QuestionCard({
   question,
   isStudied,
   toggleStudied,
-  notes,
+  notes = [],
   currentNote,
   onCurrentNoteChange,
   onSaveNote,
@@ -51,6 +51,9 @@ export function QuestionCard({
   allTags,
   isDraggable = false,
 }: QuestionCardProps) {
+  // Ensure notes is always an array
+  const safeNotes = Array.isArray(notes) ? notes : []
+
   if (isEditing) {
     return (
       <QuestionEditForm question={question} onCancel={onCancelEdit} onUpdate={onUpdateQuestion} allTags={allTags} />
@@ -63,6 +66,7 @@ export function QuestionCard({
         question.type === "coding" ? "border-purple-500" : "border-blue-500"
       } dark:bg-gray-900 group`}
     >
+      {/* Keep the existing CardHeader and CardContent */}
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 flex-wrap">
@@ -122,19 +126,20 @@ export function QuestionCard({
               "Mark as Studied"
             )}
           </Button>
-          <Button variant="ghost" size="sm" onClick={toggleNotes}>
-            {showNotes ? "Hide Notes" : `Notes ${notes.length > 0 ? `(${notes.length})` : ""}`}
+          <Button variant="ghost" size="sm" onClick={toggleNotes} className="flex items-center gap-1.5">
+            <BookOpen className="h-4 w-4" />
+            {showNotes ? "Hide Notes" : `Notes ${safeNotes.length > 0 ? `(${safeNotes.length})` : ""}`}
           </Button>
         </div>
 
         {showNotes && (
           <QuestionNotes
-            notes={notes}
+            notes={safeNotes}
             currentNote={currentNote}
             onCurrentNoteChange={onCurrentNoteChange}
-            onSaveNote={onSaveNote}
-            onUpdateNote={onUpdateNote}
-            onDeleteNote={onDeleteNote}
+            onSaveNote={() => onSaveNote(question.id)}
+            onUpdateNote={(noteId, content) => onUpdateNote(question.id, noteId, content)}
+            onDeleteNote={(noteId) => onDeleteNote(question.id, noteId)}
             onReorderNotes={(reorderedNotes) => onReorderNotes(question.id, reorderedNotes)}
           />
         )}

@@ -1,17 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core"
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { SortableNote } from "@/components/ui/sortable-note"
+import { NoteItem } from "@/components/ui/note-item"
 
 interface Note {
   id: string
@@ -27,64 +16,53 @@ interface NotesListProps {
   onReorder: (reorderedNotes: Note[]) => void
 }
 
-export function NotesList({ notes, onUpdate, onDelete, onReorder }: NotesListProps) {
-  const [activeId, setActiveId] = useState<string | null>(null)
+export function NotesList({ notes = [], onUpdate, onDelete, onReorder }: NotesListProps) {
+  // Ensure notes is always an array
+  const safeNotes = Array.isArray(notes) ? notes : []
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+  if (safeNotes.length === 0) return null
 
-  function handleDragStart(event) {
-    setActiveId(event.active.id)
+  // Handle moving a note up in the list
+  const moveNoteUp = (index: number) => {
+    if (index <= 0) return
+
+    const newNotes = [...safeNotes]
+    const temp = newNotes[index]
+    newNotes[index] = newNotes[index - 1]
+    newNotes[index - 1] = temp
+
+    onReorder(newNotes)
   }
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
+  // Handle moving a note down in the list
+  const moveNoteDown = (index: number) => {
+    if (index >= safeNotes.length - 1) return
 
-    setActiveId(null)
+    const newNotes = [...safeNotes]
+    const temp = newNotes[index]
+    newNotes[index] = newNotes[index + 1]
+    newNotes[index + 1] = temp
 
-    if (over && active.id !== over.id) {
-      const oldIndex = notes.findIndex((note) => note.id === active.id)
-      const newIndex = notes.findIndex((note) => note.id === over.id)
-
-      const reorderedNotes = arrayMove(notes, oldIndex, newIndex)
-      onReorder(reorderedNotes)
-    }
+    onReorder(newNotes)
   }
-
-  if (notes.length === 0) return null
 
   return (
     <div className="mb-4 space-y-3">
       <h3 className="text-sm font-medium">Your Notes</h3>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext items={notes.map((note) => note.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-            {notes.map((note) => (
-              <SortableNote
-                key={note.id}
-                id={note.id}
-                note={note}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-                isDragging={activeId === note.id}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+        {safeNotes.map((note, index) => (
+          <NoteItem
+            key={note.id}
+            note={note}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            onMoveUp={() => moveNoteUp(index)}
+            onMoveDown={() => moveNoteDown(index)}
+            isFirst={index === 0}
+            isLast={index === safeNotes.length - 1}
+          />
+        ))}
+      </div>
     </div>
   )
 }

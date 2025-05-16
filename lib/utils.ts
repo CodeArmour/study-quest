@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { mockQuestions } from "./data"
 
 // Define the Note type
 export interface Note {
@@ -85,6 +86,7 @@ export const filterAndSortQuestions = (
       filteredQuestions.sort((a, b) => difficultyOrderDesc[b.difficulty] - difficultyOrderDesc[a.difficulty])
       break
     default:
+      // Default to newest first if no specific sort is selected
       filteredQuestions.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
   }
 
@@ -125,4 +127,38 @@ export const formatTime = (time: number) => {
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// Save a new question to localStorage
+export const saveQuestion = (question) => {
+  // Get existing questions from localStorage
+  const savedQuestions = localStorage.getItem("studyquest-questions")
+  const questions = savedQuestions ? JSON.parse(savedQuestions) : []
+
+  // Add the new question with a unique ID and date
+  const newQuestion = {
+    ...question,
+    id: Date.now(), // Use timestamp as ID
+    dateAdded: new Date().toISOString(),
+  }
+
+  questions.push(newQuestion)
+
+  // Save back to localStorage
+  localStorage.setItem("studyquest-questions", JSON.stringify(questions))
+
+  return newQuestion
+}
+
+// Get all questions (combining mock data and saved questions)
+export const getAllQuestions = () => {
+  // Get saved questions from localStorage
+  const savedQuestions = localStorage.getItem("studyquest-questions")
+  const userQuestions = savedQuestions ? JSON.parse(savedQuestions) : []
+
+  // Combine with mock data
+  // Assuming mockQuestions is defined elsewhere and accessible
+  // If not, you'll need to import or define it here.
+  // For example: import { mockQuestions } from './mock-data';
+  return [...mockQuestions, ...userQuestions]
 }

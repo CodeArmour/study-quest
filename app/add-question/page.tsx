@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +16,7 @@ import { AlertCircle, CheckCircle, Code, BookOpen, X } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
+import { saveQuestion } from "@/lib/utils"
 
 export default function AddQuestionPage() {
   const router = useRouter()
@@ -24,6 +26,7 @@ export default function AddQuestionPage() {
     type: "coding",
     question: "",
     answer: "",
+    difficulty: "medium", // Add default difficulty
     tags: [],
   })
 
@@ -100,6 +103,10 @@ export default function AddQuestionPage() {
       newErrors.answer = "Answer is required"
     }
 
+    if (!formData.difficulty) {
+      newErrors.difficulty = "Difficulty is required"
+    }
+
     if (formData.tags.length === 0) {
       newErrors.tags = "At least one tag is required"
     }
@@ -123,10 +130,10 @@ export default function AddQuestionPage() {
 
     setIsSubmitting(true)
 
-    // Simulate API call to save the question
-    setTimeout(() => {
-      // In a real app, you would save to a database here
-      console.log("Question saved:", formData)
+    // Save the question to localStorage
+    try {
+      const savedQuestion = saveQuestion(formData)
+      console.log("Question saved:", savedQuestion)
 
       toast({
         title: "Question Added Successfully",
@@ -137,7 +144,15 @@ export default function AddQuestionPage() {
       setTimeout(() => {
         router.push("/")
       }, 1500)
-    }, 1000)
+    } catch (error) {
+      console.error("Error saving question:", error)
+      toast({
+        title: "Error",
+        description: "There was a problem saving your question. Please try again.",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -145,10 +160,13 @@ export default function AddQuestionPage() {
       <Toaster />
       <header className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b">
         <div className="container flex items-center justify-between h-16 px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
-              SQ
-            </div>
+          <Link href="/" className="flex items-center gap-0">
+              <Image
+                src="/navIcon.png"
+                alt="Logo"
+                width={55}
+                height={55}
+                />
             <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               StudyQuest
             </span>
@@ -199,6 +217,51 @@ export default function AddQuestionPage() {
                         <Label htmlFor="theory" className="cursor-pointer flex items-center gap-1.5">
                           <BookOpen className="h-4 w-4 text-blue-500" />
                           Theoretical Question
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="difficulty">Difficulty Level</Label>
+                    <RadioGroup
+                      id="difficulty"
+                      value={formData.difficulty}
+                      onValueChange={(value) => {
+                        setFormData({
+                          ...formData,
+                          difficulty: value,
+                        })
+
+                        // Clear error for this field when user changes selection
+                        if (errors.difficulty) {
+                          setErrors({
+                            ...errors,
+                            difficulty: null,
+                          })
+                        }
+                      }}
+                      className="flex flex-wrap gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="easy" id="easy" />
+                        <Label htmlFor="easy" className="cursor-pointer flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full bg-green-500"></span>
+                          Easy
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="medium" id="medium" />
+                        <Label htmlFor="medium" className="cursor-pointer flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500"></span>
+                          Medium
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="hard" id="hard" />
+                        <Label htmlFor="hard" className="cursor-pointer flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                          Hard
                         </Label>
                       </div>
                     </RadioGroup>
@@ -329,6 +392,17 @@ export default function AddQuestionPage() {
                                 <BookOpen className="h-3 w-3" /> Theory
                               </span>
                             )}
+                          </span>
+                          <span
+                            className={`text-xs font-medium px-2 py-1 rounded-full ${
+                              formData.difficulty === "easy"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                : formData.difficulty === "medium"
+                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                            }`}
+                          >
+                            {formData.difficulty.charAt(0).toUpperCase() + formData.difficulty.slice(1)}
                           </span>
                         </div>
                       </div>

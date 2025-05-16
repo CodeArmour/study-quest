@@ -14,7 +14,7 @@ import { DesktopSortSection } from "@/components/sections/desktop-sort-section"
 import { EmptyStateSection } from "@/components/sections/empty-state-section"
 import { SortableQuestionCard } from "@/components/question-card/sortable-question-card"
 import { mockQuestions } from "@/lib/data"
-import { type QuestionNotes, filterAndSortQuestions, getActiveFiltersCount, formatDate } from "@/lib/utils"
+import { filterAndSortQuestions, getActiveFiltersCount, formatDate, getAllQuestions } from "@/lib/utils"
 import {
   DndContext,
   closestCenter,
@@ -26,17 +26,19 @@ import {
 } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
+// Replace flashcards state with notes state
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTags, setSelectedTags] = useState([])
-  const [notes, setNotes] = useState<QuestionNotes>({})
-  const [currentNote, setCurrentNote] = useState("")
+  const [notes, setNotes] = useState({})
+  const [currentNotes, setCurrentNotes] = useState({})
   const [studiedQuestions, setStudiedQuestions] = useState([])
   const [showNotesMap, setShowNotesMap] = useState({})
   const [activeTab, setActiveTab] = useState("all")
   const [customQuestionOrder, setCustomQuestionOrder] = useState([])
   const [defaultQuestionOrder, setDefaultQuestionOrder] = useState([])
   const [activeId, setActiveId] = useState<number | null>(null)
+  const [allQuestions, setAllQuestions] = useState([])
 
   // New filter states
   const [filters, setFilters] = useState({
@@ -48,6 +50,22 @@ export default function Home() {
 
   // Add a new state variable for tracking which question is being edited
   const [editingQuestionId, setEditingQuestionId] = useState(null)
+
+  // Load all questions (mock + user-added) when the component mounts or when localStorage changes
+  useEffect(() => {
+    setAllQuestions(getAllQuestions())
+
+    // Add event listener for storage changes
+    const handleStorageChange = () => {
+      setAllQuestions(getAllQuestions())
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+    }
+  }, [])
 
   // Set up sensors for drag and drop
   const sensors = useSensors(
@@ -70,36 +88,98 @@ export default function Home() {
     const savedDefaultOrder = localStorage.getItem("studyquest-default-order")
 
     if (savedNotes) {
-      setNotes(JSON.parse(savedNotes))
+      try {
+        const parsedNotes = JSON.parse(savedNotes)
+        // Validate that parsedNotes is an object
+        if (parsedNotes && typeof parsedNotes === "object") {
+          // Ensure each question's notes is an array
+          Object.keys(parsedNotes).forEach((questionId) => {
+            if (!Array.isArray(parsedNotes[questionId])) {
+              parsedNotes[questionId] = []
+            }
+          })
+          setNotes(parsedNotes)
+        } else {
+          console.error("Invalid notes format in localStorage, resetting to empty object")
+          setNotes({})
+        }
+      } catch (error) {
+        console.error("Error parsing notes from localStorage:", error)
+        setNotes({})
+      }
     }
 
     if (savedStudied) {
-      setStudiedQuestions(JSON.parse(savedStudied))
+      try {
+        const parsedStudied = JSON.parse(savedStudied)
+        if (Array.isArray(parsedStudied)) {
+          setStudiedQuestions(parsedStudied)
+        } else {
+          setStudiedQuestions([])
+        }
+      } catch (error) {
+        console.error("Error parsing studied questions from localStorage:", error)
+        setStudiedQuestions([])
+      }
     }
 
     if (savedFilters) {
-      const parsedFilters = JSON.parse(savedFilters)
-      setFilters(parsedFilters)
-      if (parsedFilters.questionType) {
-        setActiveTab(parsedFilters.questionType)
-      }
-      if (parsedFilters.tags) {
-        setSelectedTags(parsedFilters.tags)
+      try {
+        const parsedFilters = JSON.parse(savedFilters)
+        setFilters(parsedFilters)
+        if (parsedFilters.questionType) {
+          setActiveTab(parsedFilters.questionType)
+        }
+        if (parsedFilters.tags && Array.isArray(parsedFilters.tags)) {
+          setSelectedTags(parsedFilters.tags)
+        }
+      } catch (error) {
+        console.error("Error parsing filters from localStorage:", error)
       }
     }
 
     if (savedQuestionOrder) {
-      setCustomQuestionOrder(JSON.parse(savedQuestionOrder))
+      try {
+        const parsedOrder = JSON.parse(savedQuestionOrder)
+        if (Array.isArray(parsedOrder)) {
+          setCustomQuestionOrder(parsedOrder)
+        } else {
+          // Initialize with default order based on all questions
+          const allQs = getAllQuestions()
+          setCustomQuestionOrder(allQs.map((q) => q.id))
+        }
+      } catch (error) {
+        console.error("Error parsing question order from localStorage:", error)
+        // Initialize with default order based on all questions
+        const allQs = getAllQuestions()
+        setCustomQuestionOrder(allQs.map((q) => q.id))
+      }
     } else {
-      // Initialize with default order based on mockQuestions
-      setCustomQuestionOrder(mockQuestions.map((q) => q.id))
+      // Initialize with default order based on all questions
+      const allQs = getAllQuestions()
+      setCustomQuestionOrder(allQs.map((q) => q.id))
     }
 
     if (savedDefaultOrder) {
-      setDefaultQuestionOrder(JSON.parse(savedDefaultOrder))
+      try {
+        const parsedOrder = JSON.parse(savedDefaultOrder)
+        if (Array.isArray(parsedOrder)) {
+          setDefaultQuestionOrder(parsedOrder)
+        } else {
+          // Initialize with default order based on all questions
+          const allQs = getAllQuestions()
+          setDefaultQuestionOrder(allQs.map((q) => q.id))
+        }
+      } catch (error) {
+        console.error("Error parsing default order from localStorage:", error)
+        // Initialize with default order based on all questions
+        const allQs = getAllQuestions()
+        setDefaultQuestionOrder(allQs.map((q) => q.id))
+      }
     } else {
-      // Initialize with default order based on mockQuestions
-      setDefaultQuestionOrder(mockQuestions.map((q) => q.id))
+      // Initialize with default order based on all questions
+      const allQs = getAllQuestions()
+      setDefaultQuestionOrder(allQs.map((q) => q.id))
     }
   }, [])
 
@@ -131,46 +211,54 @@ export default function Home() {
   }, [defaultQuestionOrder])
 
   // Extract all unique tags from questions
-  const allTags = [...new Set(mockQuestions.flatMap((q) => q.tags))].sort()
+  const allTags = [...new Set(allQuestions.flatMap((q) => q.tags))].sort()
 
   // Calculate progress statistics
-  const totalQuestions = mockQuestions.length
-  const totalCodingQuestions = mockQuestions.filter((q) => q.type === "coding").length
-  const totalTheoryQuestions = mockQuestions.filter((q) => q.type === "theory").length
+  const totalQuestions = allQuestions.length
+  const totalCodingQuestions = allQuestions.filter((q) => q.type === "coding").length
+  const totalTheoryQuestions = allQuestions.filter((q) => q.type === "theory").length
 
   const studiedCodingQuestions = studiedQuestions.filter(
-    (id) => mockQuestions.find((q) => q.id === id)?.type === "coding",
+    (id) => allQuestions.find((q) => q.id === id)?.type === "coding",
   ).length
 
   const studiedTheoryQuestions = studiedQuestions.filter(
-    (id) => mockQuestions.find((q) => q.id === id)?.type === "theory",
+    (id) => allQuestions.find((q) => q.id === id)?.type === "theory",
   ).length
 
   // Handle current note change
-  const handleCurrentNoteChange = (value) => {
-    setCurrentNote(value)
+  const handleCurrentNoteChange = (questionId, value) => {
+    setCurrentNotes((prev) => ({
+      ...prev,
+      [questionId]: value,
+    }))
   }
 
   // Handle saving notes
   const handleSaveNote = (questionId) => {
-    if (!currentNote.trim()) return
+    const noteContent = currentNotes[questionId]
+    if (!noteContent || !noteContent.trim()) return
 
     const newNote = {
       id: Date.now().toString(),
-      content: currentNote.trim(),
+      content: noteContent.trim(),
       timestamp: formatDate(),
       // No updatedAt initially
     }
 
     setNotes((prev) => {
-      const questionNotes = prev[questionId] || []
+      const questionNotes = Array.isArray(prev[questionId]) ? prev[questionId] : []
       return {
         ...prev,
         [questionId]: [...questionNotes, newNote],
       }
     })
 
-    setCurrentNote("")
+    // Clear the current note for this question
+    setCurrentNotes((prev) => ({
+      ...prev,
+      [questionId]: "",
+    }))
 
     toast({
       title: "Note Added",
@@ -178,14 +266,16 @@ export default function Home() {
     })
   }
 
-  // Edit a note
-  const handleUpdateNote = (questionId, noteId, updatedContent) => {
+  // Update a note
+  const handleUpdateNote = (questionId, noteId, content) => {
     setNotes((prev) => {
-      const questionNotes = prev[questionId] || []
+      // Ensure we have an array of notes for this question
+      const questionNotes = Array.isArray(prev[questionId]) ? prev[questionId] : []
+
       return {
         ...prev,
         [questionId]: questionNotes.map((note) =>
-          note.id === noteId ? { ...note, content: updatedContent, updatedAt: formatDate() } : note,
+          note.id === noteId ? { ...note, content, updatedAt: formatDate() } : note,
         ),
       }
     })
@@ -199,7 +289,9 @@ export default function Home() {
   // Delete a note
   const handleDeleteNote = (questionId, noteId) => {
     setNotes((prev) => {
-      const questionNotes = prev[questionId] || []
+      // Ensure we have an array of notes for this question
+      const questionNotes = Array.isArray(prev[questionId]) ? prev[questionId] : []
+
       return {
         ...prev,
         [questionId]: questionNotes.filter((note) => note.id !== noteId),
@@ -301,13 +393,25 @@ export default function Home() {
 
   // Handle updating a question after editing
   const handleUpdateQuestion = (questionId, updatedQuestion) => {
-    // In a real app, this would update the database
-    // For now, we'll update the mock data in memory
-    const updatedQuestions = mockQuestions.map((q) => (q.id === questionId ? { ...q, ...updatedQuestion } : q))
+    // Check if it's a mock question or user-added question
+    const isMockQuestion = mockQuestions.some((q) => q.id === questionId)
 
-    // Update the mockQuestions array
-    // Note: In a real app, this would be handled differently with a proper backend
-    mockQuestions.splice(0, mockQuestions.length, ...updatedQuestions)
+    if (isMockQuestion) {
+      // Update the mock data in memory
+      const updatedQuestions = mockQuestions.map((q) => (q.id === questionId ? { ...q, ...updatedQuestion } : q))
+      mockQuestions.splice(0, mockQuestions.length, ...updatedQuestions)
+    } else {
+      // Update user-added question in localStorage
+      const savedQuestions = localStorage.getItem("studyquest-questions")
+      if (savedQuestions) {
+        const questions = JSON.parse(savedQuestions)
+        const updatedQuestions = questions.map((q) => (q.id === questionId ? { ...q, ...updatedQuestion } : q))
+        localStorage.setItem("studyquest-questions", JSON.stringify(updatedQuestions))
+      }
+    }
+
+    // Update the allQuestions state
+    setAllQuestions(getAllQuestions())
 
     // Exit edit mode
     setEditingQuestionId(null)
@@ -371,7 +475,7 @@ export default function Home() {
   }
 
   // Get filtered questions
-  let filteredQuestions = filterAndSortQuestions(mockQuestions, filters, searchQuery, selectedTags, studiedQuestions)
+  let filteredQuestions = filterAndSortQuestions(allQuestions, filters, searchQuery, selectedTags, studiedQuestions)
 
   // Apply custom order if custom sort is selected
   if (filters.sortBy === "custom" && customQuestionOrder.length > 0) {
@@ -521,30 +625,36 @@ export default function Home() {
                 >
                   <SortableContext items={filteredQuestions.map((q) => q.id)} strategy={verticalListSortingStrategy}>
                     <div className="space-y-4">
-                      {filteredQuestions.map((question) => (
-                        <SortableQuestionCard
-                          key={question.id}
-                          id={question.id}
-                          question={question}
-                          isStudied={studiedQuestions.includes(question.id)}
-                          toggleStudied={toggleStudied}
-                          notes={notes[question.id] || []}
-                          currentNote={currentNote}
-                          onCurrentNoteChange={handleCurrentNoteChange}
-                          onSaveNote={() => handleSaveNote(question.id)}
-                          onUpdateNote={(noteId, content) => handleUpdateNote(question.id, noteId, content)}
-                          onDeleteNote={(noteId) => handleDeleteNote(question.id, noteId)}
-                          onReorderNotes={handleReorderNotes}
-                          showNotes={showNotesMap[question.id] || false}
-                          toggleNotes={() => toggleNotes(question.id)}
-                          isEditing={editingQuestionId === question.id}
-                          onEdit={() => setEditingQuestionId(question.id)}
-                          onCancelEdit={() => setEditingQuestionId(null)}
-                          onUpdateQuestion={(updatedQuestion) => handleUpdateQuestion(question.id, updatedQuestion)}
-                          allTags={allTags}
-                          isDragging={activeId === question.id}
-                        />
-                      ))}
+                      {filteredQuestions.map((question) => {
+                        // Ensure we have an array of notes for this question
+                        const questionNotes = Array.isArray(notes[question.id]) ? notes[question.id] : []
+                        const questionCurrentNote = currentNotes[question.id] || ""
+
+                        return (
+                          <SortableQuestionCard
+                            key={question.id}
+                            id={question.id}
+                            question={question}
+                            isStudied={studiedQuestions.includes(question.id)}
+                            toggleStudied={toggleStudied}
+                            notes={questionNotes}
+                            currentNote={questionCurrentNote}
+                            onCurrentNoteChange={(value) => handleCurrentNoteChange(question.id, value)}
+                            onSaveNote={handleSaveNote}
+                            onUpdateNote={handleUpdateNote}
+                            onDeleteNote={handleDeleteNote}
+                            onReorderNotes={handleReorderNotes}
+                            showNotes={showNotesMap[question.id] || false}
+                            toggleNotes={() => toggleNotes(question.id)}
+                            isEditing={editingQuestionId === question.id}
+                            onEdit={() => setEditingQuestionId(question.id)}
+                            onCancelEdit={() => setEditingQuestionId(null)}
+                            onUpdateQuestion={(updatedQuestion) => handleUpdateQuestion(question.id, updatedQuestion)}
+                            allTags={allTags}
+                            isDragging={activeId === question.id}
+                          />
+                        )
+                      })}
                     </div>
                   </SortableContext>
                 </DndContext>

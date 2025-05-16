@@ -12,9 +12,9 @@ interface SortableQuestionCardProps {
   notes: any[]
   currentNote: string
   onCurrentNoteChange: (value: string) => void
-  onSaveNote: () => void
-  onUpdateNote: (noteId: string, content: string) => void
-  onDeleteNote: (noteId: string) => void
+  onSaveNote: (questionId: number) => void
+  onUpdateNote: (questionId: number, noteId: string, content: string) => void
+  onDeleteNote: (questionId: number, noteId: string) => void
   onReorderNotes: (questionId: number, reorderedNotes: any[]) => void
   showNotes: boolean
   toggleNotes: () => void
@@ -31,7 +31,7 @@ export function SortableQuestionCard({
   question,
   isStudied,
   toggleStudied,
-  notes,
+  notes = [],
   currentNote,
   onCurrentNoteChange,
   onSaveNote,
@@ -47,7 +47,10 @@ export function SortableQuestionCard({
   allTags,
   isDragging,
 }: SortableQuestionCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id,
+    disabled: showNotes, // Disable dragging when notes are shown
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
