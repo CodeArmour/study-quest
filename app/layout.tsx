@@ -14,17 +14,17 @@ export const metadata: Metadata = {
   generator: "Next.js",
   applicationName: "StudyQuest",
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
+    icon: "/herophoto.png",
+    shortcut: "/herophoto.png",
+    apple: "/herophoto.png",
   },
   openGraph: {
     title: "StudyQuest - Exam Preparation",
     description: "A modern platform to organize and study your exam questions",
-    url: "https://v0-study-website-idea.vercel.app/",
+    url: "https://study-quest-woad.vercel.app/",
     images: [
       {
-        url: "/icon.png",
+        url: "/herophoto.png.png",
         width: 1200,
         height: 630,
         alt: "StudyQuest - Exam Preparation",
