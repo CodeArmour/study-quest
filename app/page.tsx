@@ -474,6 +474,52 @@ export default function Home() {
     })
   }
 
+  // Add this function inside the Home component, alongside the other handler functions
+  const handleDeleteQuestion = (questionId) => {
+    // Check if it's a mock question or user-added question
+    const isMockQuestion = mockQuestions.some((q) => q.id === questionId)
+
+    if (isMockQuestion) {
+      // Remove from mock data in memory
+      const questionIndex = mockQuestions.findIndex((q) => q.id === questionId)
+      if (questionIndex !== -1) {
+        mockQuestions.splice(questionIndex, 1)
+      }
+    } else {
+      // Remove from user-added questions in localStorage
+      const savedQuestions = localStorage.getItem("studyquest-questions")
+      if (savedQuestions) {
+        const questions = JSON.parse(savedQuestions)
+        const updatedQuestions = questions.filter((q) => q.id !== questionId)
+        localStorage.setItem("studyquest-questions", JSON.stringify(updatedQuestions))
+      }
+    }
+
+    // Remove any notes associated with this question
+    setNotes((prev) => {
+      const newNotes = { ...prev }
+      delete newNotes[questionId]
+      return newNotes
+    })
+
+    // Remove from studied questions if present
+    setStudiedQuestions((prev) => prev.filter((id) => id !== questionId))
+
+    // Remove from custom order
+    setCustomQuestionOrder((prev) => prev.filter((id) => id !== questionId))
+
+    // Remove from default order
+    setDefaultQuestionOrder((prev) => prev.filter((id) => id !== questionId))
+
+    // Update the allQuestions state
+    setAllQuestions((prev) => prev.filter((q) => q.id !== questionId))
+
+    toast({
+      title: "Question Deleted",
+      description: "The question has been permanently removed.",
+    })
+  }
+
   // Get filtered questions
   let filteredQuestions = filterAndSortQuestions(allQuestions, filters, searchQuery, selectedTags, studiedQuestions)
 
@@ -652,6 +698,7 @@ export default function Home() {
                             onUpdateQuestion={(updatedQuestion) => handleUpdateQuestion(question.id, updatedQuestion)}
                             allTags={allTags}
                             isDragging={activeId === question.id}
+                            onDeleteQuestion={handleDeleteQuestion}
                           />
                         )
                       })}

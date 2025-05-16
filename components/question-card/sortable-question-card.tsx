@@ -22,6 +22,7 @@ interface SortableQuestionCardProps {
   onEdit: () => void
   onCancelEdit: () => void
   onUpdateQuestion: (updatedQuestion: any) => void
+  onDeleteQuestion: (questionId: number) => void
   allTags: string[]
   isDragging: boolean
 }
@@ -44,6 +45,7 @@ export function SortableQuestionCard({
   onEdit,
   onCancelEdit,
   onUpdateQuestion,
+  onDeleteQuestion,
   allTags,
   isDragging,
 }: SortableQuestionCardProps) {
@@ -78,6 +80,7 @@ export function SortableQuestionCard({
         onEdit={onEdit}
         onCancelEdit={onCancelEdit}
         onUpdateQuestion={onUpdateQuestion}
+        onDeleteQuestion={onDeleteQuestion}
         allTags={allTags}
         isDraggable={true}
       />
