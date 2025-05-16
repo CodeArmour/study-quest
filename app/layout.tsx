@@ -8,7 +8,7 @@ import { ReactNode } from "react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://v0-study-website-idea.vercel.app/"), // <-- Replace with your actual domain
+  metadataBase: new URL("https://study-quest-woad.vercel.app"), // <-- Replace with your actual domain
   title: "StudyQuest - Exam Preparation",
   description: "A modern platform to organize and study your exam questions",
   generator: "Next.js",
