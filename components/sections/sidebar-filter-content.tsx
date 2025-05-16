@@ -179,7 +179,7 @@ export function SidebarFilterContent({
       <AccordionItem value="sort">
         <AccordionTrigger className="text-sm font-medium py-2">
           Sort By
-          {filters.sortBy !== "newest" && <Badge className="ml-2 bg-purple-600">1</Badge>}
+          {filters.sortBy !== "default" && <Badge className="ml-2 bg-purple-600">1</Badge>}
         </AccordionTrigger>
         <AccordionContent>
           <div className="space-y-3">

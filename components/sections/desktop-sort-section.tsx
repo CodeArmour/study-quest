@@ -37,7 +37,7 @@ export function DesktopSortSection({ sortBy, onSortChange, onSaveCurrentOrder }:
           <Button variant="outline" size="sm" className="hidden md:flex items-center gap-1.5">
             <ArrowUpDown className="h-3.5 w-3.5" />
             Sort
-            {sortBy !== "newest" && (
+            {sortBy !== "default" && (
               <Badge className="ml-1 h-5 w-5 p-0 flex items-center justify-center bg-purple-600">1</Badge>
             )}
           </Button>

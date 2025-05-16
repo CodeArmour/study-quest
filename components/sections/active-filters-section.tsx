@@ -48,11 +48,11 @@ export function ActiveFiltersSection({
         <FilterBadge
           label="Status"
           value={filters.studyStatus === "studied" ? "Studied" : "Not Studied"}
-          onRemove={onClearStudyStatus}
+          onRemove={() => onClearStudyStatus}
         />
       )}
 
-      {filters.sortBy !== "newest" && (
+      {filters.sortBy !== "default" && (
         <FilterBadge
           label="Sort"
           value={filters.sortBy.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}

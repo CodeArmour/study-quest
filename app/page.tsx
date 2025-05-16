@@ -42,7 +42,7 @@ export default function Home() {
   const [filters, setFilters] = useState({
     difficulty: [],
     studyStatus: "all", // "all", "studied", "not-studied"
-    sortBy: "newest", // "newest", "oldest", "a-z", "z-a", "difficulty-asc", "difficulty-desc"
+    sortBy: "default", // "default", "custom", "newest", "oldest", "a-z", "z-a", "difficulty-asc", "difficulty-desc"
     questionType: "all", // "all", "coding", "theory"
   })
 
@@ -289,7 +289,7 @@ export default function Home() {
     setFilters({
       difficulty: [],
       studyStatus: "all",
-      sortBy: "newest",
+      sortBy: "default",
       questionType: "all",
     })
     setActiveTab("all")
@@ -344,7 +344,7 @@ export default function Home() {
   }
 
   const clearSortByFilter = () => {
-    setFilters((prev) => ({ ...prev, sortBy: "newest" }))
+    setFilters((prev) => ({ ...prev, sortBy: "default" }))
   }
 
   // Save current order as default
