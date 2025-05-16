@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     url: "https://study-quest-woad.vercel.app/",
     images: [
       {
-        url: "/herophoto.png.png",
+        url: "/herophoto.png",
         width: 1200,
         height: 630,
         alt: "StudyQuest - Exam Preparation",
