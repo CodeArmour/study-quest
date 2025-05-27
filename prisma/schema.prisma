@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+
+model User {
+  id             String           @id @default(uuid())
+  username       String           @unique
+  email          String           @unique
+  passwordHash    String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  
+  // Relations
+  questions      Question[]
+  notes          Note[]
+  studyProgress  StudyProgress[]
+  quizSessions   QuizSession[]
+  preferences    UserPreference?
+  questionOrders UserQuestionOrder[]
+
+  @@map("users")
+}
+
+model Question {
+  id          String            @id @default(uuid())
+  userId      String
+  question    String            @db.Text
+  answer      String            @db.Text
+  type        QuestionType
+  difficulty  DifficultyLevel
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  isPublic    Boolean           @default(false)
+  viewCount   Int               @default(0)
+  
+  // Relations
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags        QuestionTag[]
+  notes       Note[]
+  studyProgress StudyProgress[]
+  quizResults QuizQuestionResult[]
+
+  @@map("questions")
+}
+
+model Tag {
+  id        String        @id @default(uuid())
+  name      String        @unique
+  
+  // Relations
+  questions  QuestionTag[]
+
+  @@map("tags")
+}
+
+model QuestionTag {
+  questionId String
+  tagId      String
+  
+  // Relations
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+  @@map("question_tags")
+}
+
+model Note {
+  id          String    @id @default(uuid())
+  questionId  String
+  userId      String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  position    Int       @default(0)
+  
+  // Relations
+  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+model StudyProgress {
+  userId        String
+  questionId    String
+  isStudied     Boolean   @default(false)
+  lastStudiedAt DateTime?
+  studyCount    Int       @default(0)
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@map("study_progress")
+}
+
+model UserQuestionOrder {
+  userId      String
+  orderType   OrderType
+  questionIds String[]   // Stored as array of UUIDs
+  updatedAt   DateTime   @updatedAt
+  
+  // Relations
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, orderType])
+  @@map("user_question_orders")
+}
+
+model UserPreference {
+  userId          String
+  theme           Theme      @default(SYSTEM)
+  filters         Json?      // Stored as JSONB
+  selectedTags    String[]   // Array of tag UUIDs
+  lastActiveTab   String?
+  
+  // Relations
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId])
+  @@map("user_preferences")
+}
+
+model QuizSession {
+  id              String              @id @default(uuid())
+  userId          String
+  startTime       DateTime            @default(now())
+  endTime         DateTime?
+  questionCount   Int
+  questionType    QuestionType?
+  difficultyMode  DifficultyLevel?
+  completed       Boolean             @default(false)
+  
+  // Relations
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionResults QuizQuestionResult[]
+
+  @@map("quiz_sessions")
+}
+
+model QuizQuestionResult {
+  quizSessionId   String
+  questionId      String
+  timeSpentMs     Int
+  position        Int
+  
+  // Relations
+  quizSession     QuizSession  @relation(fields: [quizSessionId], references: [id], onDelete: Cascade)
+  question        Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([quizSessionId, questionId])
+  @@map("quiz_question_results")
+}
+
+// Enums
+enum QuestionType {
+  CODING
+  THEORY
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum OrderType {
+  CUSTOM
+  DEFAULT
+}
